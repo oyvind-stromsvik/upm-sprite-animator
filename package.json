@@ -1,0 +1,11 @@
+{
+  "name": "com.twiik.spriteanimator",
+  "version": "1.0.0",
+  "displayName": "Sprite Animator",
+  "description": "For doing sprite based 2D animation without the overhead of Mecanim.",
+  "author": {
+    "name": "TwiiK",
+    "email": "oyvind@nymedia.no",
+    "url": "http://twiik.net/"
+  }
+}
