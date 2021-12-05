@@ -1,40 +1,48 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class SpriteAnimator : MonoBehaviour {
+    public UnityEvent OnAnimationEndEvent { get; private set; } = new UnityEvent();
+
     public SpriteAnimation[] animations;
 
     // Set this to override the speed of the current animation.
     // Useful for having a dynamic fps based on move speed etc.
     public int fps;
 
+    public bool looping;
+
+    // Store this here because we can have a non-looping ping pong animation
+    // and in that case we allow it to play once forwards and once in reverse
+    // before we stop it.
+    public bool pingPong;
+
+    // If the current animation is set to ping pong and is now supposed to
+    // be played in reverse.
+    public bool reverse;
+
     // Set this to control the current frame of the animation. F. ex. setting
     // fps to 0 and this to 0 let's us show only the initial frame of the animation
     // for as long as we wish.
-    [HideInInspector] public int currentFrame;
+    public int currentFrame;
 
-    [HideInInspector] public SpriteAnimation currentAnimation;
+    public SpriteAnimation currentAnimation;
 
     private SpriteRenderer _spriteRenderer;
     private float _timer;
 
     private bool _playOnceUninterrupted;
 
-    // Store this here because we can have a non-looping ping pong animation
-    // and in that case we allow it to play once forwards and once in reverse
-    // before we stop it.
-    private bool _pingPong;
-    // If the current animation is set to ping pong and is now supposed to
-    // be played in reverse.
-    private bool _reverse;
-
     private void Awake() {
         _spriteRenderer = GetComponent<SpriteRenderer>();
-        currentAnimation = animations[0];
     }
 
     private void Update() {
+        if (currentAnimation != null && currentAnimation.name == "SitWag") {
+            var debug = true;
+        }
         // For enabling playing an uninterrupted animation like a weapon
         // attack even if we're telling the animator to play other animations
         // like walking, running or jumping at the same time.
@@ -52,33 +60,36 @@ public class SpriteAnimator : MonoBehaviour {
             return;
         }
 
-        if (ReachedEndOfAnimation()) {
-            if (currentAnimation.showBlankFrameAtTheEnd) {
-                _spriteRenderer.sprite = null;
-            }
+        // This is a really clever way of handling looping.
+        // Taken from GameMaker, and inspired by Daniel Linssen's code.
+        // This allows you to just increase the index of the frame to play and
+        // it will still be capped to the available number of frames in the animation.
+        currentFrame %= currentAnimation.frames.Length;
 
-            // The current animation is set to ping pong so switch its direction.
-            if (_pingPong) {
-                _reverse = !_reverse;
-            }
+        // Set the current sprite.
+        _spriteRenderer.sprite = currentAnimation.frames[currentFrame];
+
+        if (ReachedEndOfAnimation()) {
             // The animation is not looping.
-            if (!currentAnimation.looping) {
+            if (!looping) {
+                if (currentAnimation.showBlankFrameAtTheEnd) {
+                    _spriteRenderer.sprite = null;
+                }
+
                 // If it's ping ponging let it loop once more before we stop it.
-                if (_pingPong) {
-                    _pingPong = false;
+                if (pingPong) {
+                    pingPong = false;
+                    reverse = !reverse;
                 }
                 else {
                     Stop();
                 }
             }
+            // The current animation is set to ping pong so switch its direction.
+            else if (pingPong) {
+                reverse = !reverse;
+            }
         }
-
-        // This is a really clever way of handling looping.
-        // Taken from GameMaker, and inspired by Daniel Linssen's code.
-        currentFrame %= currentAnimation.frames.Length;
-
-        // Set the current sprite.
-        _spriteRenderer.sprite = currentAnimation.frames[currentFrame];
 
         // If the framerate is zero don't calculate the next frame.
         // We can change the current frame from outside this script
@@ -94,7 +105,7 @@ public class SpriteAnimator : MonoBehaviour {
         _timer += Time.deltaTime;
         if (_timer >= (1f / fps)) {
             _timer = 0;
-            if (_reverse) {
+            if (reverse) {
                 currentFrame--;
             }
             else {
@@ -103,7 +114,7 @@ public class SpriteAnimator : MonoBehaviour {
         }
     }
 
-    public void Play(string name, bool reset = false, float speed = 1) {
+    public void Play(string name, float speed = 1, bool reset = true) {
         if (currentAnimation != null && currentAnimation.name == name) {
             return;
         }
@@ -113,13 +124,14 @@ public class SpriteAnimator : MonoBehaviour {
             if (animation.name == name) {
                 currentAnimation = animation;
                 fps = Mathf.RoundToInt(Mathf.Abs(currentAnimation.fps * speed));
-                _reverse = speed < 0;
-                _pingPong = currentAnimation.pingPong;
+                looping = currentAnimation.looping;
+                pingPong = currentAnimation.pingPong;
+                reverse = speed < 0;
 
                 if (reset) {
                     // Switch over to the new animation immediately. Otherwise
                     // there is a 1 frame delay.
-                    currentFrame = 0;
+                    currentFrame = reverse ? (currentAnimation.frames.Length - 1) : 0;
                     _spriteRenderer.sprite = currentAnimation.frames[currentFrame];
                 }
 
@@ -133,11 +145,11 @@ public class SpriteAnimator : MonoBehaviour {
         }
     }
 
-    public void PlayOnceUninterrupted(string playOnceName, int playOnceFps) {
-        StartCoroutine(DoPlayOnceUninterrupted(playOnceName, playOnceFps));
+    public void PlayOnceUninterrupted(string playOnceName) {
+        StartCoroutine(DoPlayOnceUninterrupted(playOnceName));
     }
 
-    private IEnumerator DoPlayOnceUninterrupted(string playOnceName, int playOnceFps) {
+    private IEnumerator DoPlayOnceUninterrupted(string playOnceName) {
         _playOnceUninterrupted = true;
 
         SpriteAnimation playOnceAnimation = null;
@@ -160,7 +172,7 @@ public class SpriteAnimator : MonoBehaviour {
         while (playOnceCurrentFrame < playOnceAnimation.frames.Length) {
             _spriteRenderer.sprite = playOnceAnimation.frames[playOnceCurrentFrame];
             t += Time.deltaTime;
-            if (t >= 1f / playOnceFps) {
+            if (t >= 1f / playOnceAnimation.fps) {
                 t = 0;
                 playOnceCurrentFrame++;
             }
@@ -191,32 +203,14 @@ public class SpriteAnimator : MonoBehaviour {
         throw new NullReferenceException();
     }
 
-    /// <summary>
-    /// Returns the length of the animation in seconds.
-    /// </summary>
-    /// <param name="name"></param>
-    /// <returns></returns>
-    /// <exception cref="NullReferenceException"></exception>
-    public float GetAnimationLength(string name, int fpsToCheckWith) {
-        if (currentAnimation != null && currentAnimation.name == name) {
-            return currentAnimation.frames.Length * (1f / fpsToCheckWith);
-        }
-
-        foreach (SpriteAnimation animation in animations) {
-            if (animation.name == name) {
-                return animation.frames.Length * (1f / fpsToCheckWith);
-            }
-        }
-
-        throw new NullReferenceException();
-    }
-
     public bool ReachedEndOfAnimation() {
-        if (currentFrame == (currentAnimation.frames.Length - 1) && !currentAnimation.looping) {
+        if (!reverse && currentFrame == (currentAnimation.frames.Length - 1) && !looping) {
+            OnAnimationEndEvent?.Invoke();
             return true;
         }
 
-        if (_reverse && currentFrame == 0) {
+        if (reverse && currentFrame == 0) {
+            OnAnimationEndEvent?.Invoke();
             return true;
         }
 
