@@ -40,9 +40,6 @@ public class SpriteAnimator : MonoBehaviour {
     }
 
     private void Update() {
-        if (currentAnimation != null && currentAnimation.name == "SitWag") {
-            var debug = true;
-        }
         // For enabling playing an uninterrupted animation like a weapon
         // attack even if we're telling the animator to play other animations
         // like walking, running or jumping at the same time.
