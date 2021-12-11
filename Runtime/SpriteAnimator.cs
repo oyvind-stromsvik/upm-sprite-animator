@@ -40,9 +40,6 @@ public class SpriteAnimator : MonoBehaviour {
     }
 
     private void Update() {
-        // For enabling playing an uninterrupted animation like a weapon
-        // attack even if we're telling the animator to play other animations
-        // like walking, running or jumping at the same time.
         if (_playOnceUninterrupted) {
             return;
         }
@@ -142,10 +139,24 @@ public class SpriteAnimator : MonoBehaviour {
         }
     }
 
+    /// <summary>
+    /// For enabling playing an uninterrupted animation like a weapon
+    /// attack even if we're telling the animator to play other animations
+    /// like walking, running or jumping at the same time.
+    ///
+    /// TODO: Currently duplicates all the play functionality. Can it be merged?
+    /// </summary>
+    /// <param name="playOnceName"></param>
+    /// <returns></returns>
     public void PlayOnceUninterrupted(string playOnceName) {
         StartCoroutine(DoPlayOnceUninterrupted(playOnceName));
     }
 
+    /// <summary>
+    /// See PlayOnceUninterrupted().
+    /// </summary>
+    /// <param name="playOnceName"></param>
+    /// <returns></returns>
     private IEnumerator DoPlayOnceUninterrupted(string playOnceName) {
         _playOnceUninterrupted = true;
 
@@ -188,12 +199,12 @@ public class SpriteAnimator : MonoBehaviour {
     /// <exception cref="NullReferenceException"></exception>
     public float GetAnimationLength(string name) {
         if (currentAnimation != null && currentAnimation.name == name) {
-            return currentAnimation.frames.Length * (1f / fps);
+            return currentAnimation.frames.Length * (1f / currentAnimation.fps);
         }
 
         foreach (SpriteAnimation animation in animations) {
             if (animation.name == name) {
-                return animation.frames.Length * (1f / fps);
+                return animation.frames.Length * (1f / animation.fps);
             }
         }
 
