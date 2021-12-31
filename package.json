@@ -1,6 +1,6 @@
 {
   "name": "com.twiik.spriteanimator",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "displayName": "Sprite Animator",
   "description": "For doing sprite based 2D animation without the overhead of Mecanim.",
   "author": {

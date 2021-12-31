@@ -34,12 +34,18 @@ public class SpriteAnimator : MonoBehaviour {
     private float _timer;
 
     private bool _playOnceUninterrupted;
+    private float _speed;
+    private bool _stopped;
 
     private void Awake() {
         _spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
     private void Update() {
+        if (_stopped) {
+            return;
+        }
+
         if (_playOnceUninterrupted) {
             return;
         }
@@ -108,8 +114,19 @@ public class SpriteAnimator : MonoBehaviour {
         }
     }
 
+    /// <summary>
+    /// TODO: The reset parameter here, and the local _speed and _stopped variables are so awkward to work with and I
+    /// don't even think it does what I want. Refactor this entire class to try and make it easier to work with. I
+    /// basically only added _speed and _stopped to try and fix a bug, but I think I introduced another. Also see if the
+    /// pingPong flag makes sense or if it just makes things more complex than they need to be. You can easily just
+    /// create the pingPong effect yourself by adding the frames manually to the animation, which would give you even
+    /// more control if you didn't want an identical pingPong, but wanted the "pong" to be slightly different.
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="speed"></param>
+    /// <param name="reset"></param>
     public void Play(string name, float speed = 1, bool reset = true) {
-        if (currentAnimation != null && currentAnimation.name == name) {
+        if (currentAnimation != null && currentAnimation.name == name && speed == _speed) {
             return;
         }
 
@@ -121,6 +138,8 @@ public class SpriteAnimator : MonoBehaviour {
                 looping = currentAnimation.looping;
                 pingPong = currentAnimation.pingPong;
                 reverse = speed < 0;
+                _stopped = false;
+                _speed = speed;
 
                 if (reset) {
                     // Switch over to the new animation immediately. Otherwise
@@ -226,6 +245,6 @@ public class SpriteAnimator : MonoBehaviour {
     }
 
     public void Stop() {
-        currentAnimation = null;
+        _stopped = true;
     }
 }
