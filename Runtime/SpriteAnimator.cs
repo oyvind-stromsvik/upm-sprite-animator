@@ -116,20 +116,7 @@ public class SpriteAnimator : MonoBehaviour {
             }
         }
     }
-    
-    private Sprite GetSprite() {
-        if (_spriteRenderer != null) {
-            return _spriteRenderer.sprite;
-        }
-        if (_image != null) {
-            return _image.sprite;
-        }
-        
-        Debug.LogError("No SpriteRenderer or Image component found on this GameObject.");
-        
-        return null;
-    }
-    
+
     private void SetSprite(Sprite sprite) {
         if (_spriteRenderer != null) {
             _spriteRenderer.sprite = sprite;
@@ -259,12 +246,7 @@ public class SpriteAnimator : MonoBehaviour {
     }
 
     public bool ReachedEndOfAnimation() {
-        if (!reverse && currentFrame == (currentAnimation.frames.Length - 1) && !looping) {
-            OnAnimationEndEvent?.Invoke();
-            return true;
-        }
-
-        if (reverse && currentFrame == 0) {
+        if (!reverse && currentFrame == (currentAnimation.frames.Length - 1) && !looping || reverse && currentFrame == 0) {
             OnAnimationEndEvent?.Invoke();
             return true;
         }

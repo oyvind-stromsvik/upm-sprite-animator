@@ -1,5 +1,3 @@
-using System;
-using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
@@ -10,7 +8,6 @@ public class SpriteAnimationInspector : Editor {
     private const float PreviewPadding = 1f;
 
     private static Texture2D s_CheckerTex;
-    private static Material s_TransparentPreviewMaterial;
 
     private SerializedProperty _frames;
     private SerializedProperty _fps;
@@ -82,7 +79,6 @@ public class SpriteAnimationInspector : Editor {
         }
 
         EnsureCheckerTexture();
-        EnsureTransparentPreviewMaterial();
 
         Rect uv = new Rect(0, 0, rect.width / CheckerTileSize, rect.height / CheckerTileSize);
         GUI.DrawTextureWithTexCoords(rect, s_CheckerTex, uv, true);
@@ -133,7 +129,6 @@ public class SpriteAnimationInspector : Editor {
         _framesScroll = EditorGUILayout.BeginScrollView(_framesScroll, GUILayout.Height(Mathf.Min(totalHeight, 200f)));
 
         EnsureCheckerTexture();
-        EnsureTransparentPreviewMaterial();
 
         int i = 0;
         for (int y = 0; y < rows; y++) {
@@ -357,8 +352,6 @@ public class SpriteAnimationInspector : Editor {
     }
 
     private static void DrawSpritePreview(Rect targetRect, Sprite sprite) {
-        EnsureTransparentPreviewMaterial();
-
         Texture2D tex = sprite.texture;
         if (tex == null) {
             EditorGUI.DropShadowLabel(targetRect, "(no texture)");
@@ -435,47 +428,5 @@ public class SpriteAnimationInspector : Editor {
         }
 
         s_CheckerTex.Apply(false, true);
-    }
-
-    private static void EnsureTransparentPreviewMaterial() {
-        if (s_TransparentPreviewMaterial != null) {
-            return;
-        }
-
-        try {
-            Type matUtil = Type.GetType("UnityEditor.MaterialUtility, UnityEditor", false);
-            if (matUtil != null) {
-                MethodInfo mi = matUtil.GetMethod("GetDefaultMaterial",
-                    BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-                if (mi != null) {
-                    Material m = mi.Invoke(null, null) as Material;
-                    if (m != null) {
-                        s_TransparentPreviewMaterial = m;
-                        return;
-                    }
-                }
-            }
-
-            MethodInfo extraRes = typeof(EditorGUIUtility).GetMethod("GetBuiltinExtraResource",
-                BindingFlags.Static | BindingFlags.Public);
-            if (extraRes != null && extraRes.IsGenericMethodDefinition) {
-                Material m = extraRes.MakeGenericMethod(typeof(Material))
-                    .Invoke(null, new object[] { "Default-Material.mat" }) as Material;
-                if (m != null) {
-                    s_TransparentPreviewMaterial = m;
-                    return;
-                }
-            }
-        }
-        catch {
-            // ignore
-        }
-
-        Shader shader = Shader.Find("Unlit/Transparent") ?? Shader.Find("UI/Unlit/Transparent") ?? Shader.Find("Sprites/Default");
-        if (shader != null) {
-            s_TransparentPreviewMaterial = new Material(shader) {
-                hideFlags = HideFlags.HideAndDontSave
-            };
-        }
     }
 }
