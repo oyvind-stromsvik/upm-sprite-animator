@@ -1,6 +1,8 @@
 # TwiiK Sprite Animator
 
-A lightweight sprite animation system for Unity, designed as an alternative to Mecanim for simple 2D sprite-based animations. I'm trying to use it in 3 projects currently and I'm adding to is as I go.
+A lightweight sprite animation system for Unity, designed as an alternative to Mecanim for simple 2D sprite-based animations. I'm trying to use it in 3 projects currently and I'm adding to is as I go.  
+
+![Sprite Animator screenshot](docs/twiik-sprite-animator.png)
 
 ## Features
 
