@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.UI;
 
 public class SpriteAnimator : MonoBehaviour {
     public UnityEvent OnAnimationEndEvent { get; private set; } = new UnityEvent();
@@ -31,6 +32,7 @@ public class SpriteAnimator : MonoBehaviour {
     public SpriteAnimation currentAnimation;
 
     private SpriteRenderer _spriteRenderer;
+    private Image _image;
     private float _timer;
 
     private bool _playOnceUninterrupted;
@@ -39,6 +41,7 @@ public class SpriteAnimator : MonoBehaviour {
 
     private void Awake() {
         _spriteRenderer = GetComponent<SpriteRenderer>();
+        _image = GetComponent<Image>();
     }
 
     private void Update() {
@@ -67,13 +70,13 @@ public class SpriteAnimator : MonoBehaviour {
         currentFrame %= currentAnimation.frames.Length;
 
         // Set the current sprite.
-        _spriteRenderer.sprite = currentAnimation.frames[currentFrame];
+        SetSprite(currentAnimation.frames[currentFrame]);
 
         if (ReachedEndOfAnimation()) {
             // The animation is not looping.
             if (!looping) {
                 if (currentAnimation.showBlankFrameAtTheEnd) {
-                    _spriteRenderer.sprite = null;
+                    SetSprite(null);
                 }
 
                 // If it's ping ponging let it loop once more before we stop it.
@@ -113,6 +116,31 @@ public class SpriteAnimator : MonoBehaviour {
             }
         }
     }
+    
+    private Sprite GetSprite() {
+        if (_spriteRenderer != null) {
+            return _spriteRenderer.sprite;
+        }
+        if (_image != null) {
+            return _image.sprite;
+        }
+        
+        Debug.LogError("No SpriteRenderer or Image component found on this GameObject.");
+        
+        return null;
+    }
+    
+    private void SetSprite(Sprite sprite) {
+        if (_spriteRenderer != null) {
+            _spriteRenderer.sprite = sprite;
+        }
+        else if (_image != null) {
+            _image.sprite = sprite;
+        }
+        else {
+            Debug.LogError("No SpriteRenderer or Image component found on this GameObject.");
+        }
+    }
 
     /// <summary>
     /// TODO: The reset parameter here, and the local _speed and _stopped variables are so awkward to work with and I
@@ -145,7 +173,7 @@ public class SpriteAnimator : MonoBehaviour {
                     // Switch over to the new animation immediately. Otherwise
                     // there is a 1 frame delay.
                     currentFrame = reverse ? (currentAnimation.frames.Length - 1) : 0;
-                    _spriteRenderer.sprite = currentAnimation.frames[currentFrame];
+                    SetSprite(currentAnimation.frames[currentFrame]);
                 }
 
                 found = true;
@@ -186,7 +214,7 @@ public class SpriteAnimator : MonoBehaviour {
             if (animation.name == playOnceName) {
                 playOnceAnimation = animation;
                 playOnceCurrentFrame = 0;
-                _spriteRenderer.sprite = playOnceAnimation.frames[playOnceCurrentFrame];
+                SetSprite(playOnceAnimation.frames[playOnceCurrentFrame]);
                 break;
             }
         }
@@ -197,7 +225,7 @@ public class SpriteAnimator : MonoBehaviour {
 
         float t = 0;
         while (playOnceCurrentFrame < playOnceAnimation.frames.Length) {
-            _spriteRenderer.sprite = playOnceAnimation.frames[playOnceCurrentFrame];
+            SetSprite(playOnceAnimation.frames[playOnceCurrentFrame]);
             t += Time.deltaTime;
             if (t >= 1f / playOnceAnimation.fps) {
                 t = 0;
