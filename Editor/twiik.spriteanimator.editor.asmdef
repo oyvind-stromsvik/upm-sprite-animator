@@ -1,0 +1,10 @@
+{
+  "name": "twiik.spriteanimator.editor",
+  "references": [
+    "twiik.spriteanimator.runtime"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "autoReferenced": true
+}
