@@ -174,6 +174,32 @@ public class SpriteAnimator : MonoBehaviour {
     }
 
     /// <summary>
+    /// Play an animation by direct reference.
+    /// </summary>
+    public void Play(SpriteAnimation animation, float speed = 1, bool reset = true) {
+        if (animation == null) {
+            return;
+        }
+
+        if (currentAnimation == animation && speed == _speed) {
+            return;
+        }
+
+        currentAnimation = animation;
+        fps = Mathf.RoundToInt(Mathf.Abs(currentAnimation.fps * speed));
+        looping = currentAnimation.looping;
+        pingPong = currentAnimation.pingPong;
+        reverse = speed < 0;
+        _stopped = false;
+        _speed = speed;
+
+        if (reset) {
+            currentFrame = reverse ? (currentAnimation.frames.Length - 1) : 0;
+            SetSprite(currentAnimation.frames[currentFrame]);
+        }
+    }
+
+    /// <summary>
     /// For enabling playing an uninterrupted animation like a weapon
     /// attack even if we're telling the animator to play other animations
     /// like walking, running or jumping at the same time.
@@ -184,6 +210,17 @@ public class SpriteAnimator : MonoBehaviour {
     /// <returns></returns>
     public void PlayOnceUninterrupted(string playOnceName) {
         StartCoroutine(DoPlayOnceUninterrupted(playOnceName));
+    }
+
+    /// <summary>
+    /// Play an uninterrupted animation by direct reference.
+    /// </summary>
+    public void PlayOnceUninterrupted(SpriteAnimation animation) {
+        if (animation == null) {
+            return;
+        }
+
+        StartCoroutine(DoPlayOnceUninterrupted(animation));
     }
 
     /// <summary>
@@ -225,6 +262,27 @@ public class SpriteAnimator : MonoBehaviour {
         _playOnceUninterrupted = false;
     }
 
+    private IEnumerator DoPlayOnceUninterrupted(SpriteAnimation playOnceAnimation) {
+        _playOnceUninterrupted = true;
+
+        int playOnceCurrentFrame = 0;
+        SetSprite(playOnceAnimation.frames[playOnceCurrentFrame]);
+
+        float t = 0;
+        while (playOnceCurrentFrame < playOnceAnimation.frames.Length) {
+            SetSprite(playOnceAnimation.frames[playOnceCurrentFrame]);
+            t += Time.deltaTime;
+            if (t >= 1f / playOnceAnimation.fps) {
+                t = 0;
+                playOnceCurrentFrame++;
+            }
+
+            yield return null;
+        }
+
+        _playOnceUninterrupted = false;
+    }
+
     /// <summary>
     /// Returns the length of the animation in seconds.
     /// </summary>
@@ -243,6 +301,17 @@ public class SpriteAnimator : MonoBehaviour {
         }
 
         throw new NullReferenceException();
+    }
+
+    /// <summary>
+    /// Returns the length of the animation in seconds by direct reference.
+    /// </summary>
+    public float GetAnimationLength(SpriteAnimation animation) {
+        if (animation == null) {
+            throw new NullReferenceException("Animation is null");
+        }
+
+        return animation.frames.Length * (1f / animation.fps);
     }
 
     public bool ReachedEndOfAnimation() {
